@@ -58,8 +58,13 @@ router.get("/suggested-games", async function (req, res) {
 
   console.log(gamesNotOwned);
 
+  // Find Game IDS on CheapShark
+  const cs = await fetch(`https://www.cheapshark.com/api/1.0/games?steamAppID=${gamesNotOwned[0].appid}`);
+  const csRes = await cs.json();
+  console.log(csRes);
 
-  res.render('steam-search', {query: 'me', results: gamesNotOwned});
+
+  res.render('steam-search', {query: 'me', results: gamesNotOwned, deal: gamesDeals});
 });
 
 module.exports = router;
