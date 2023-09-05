@@ -1,7 +1,23 @@
-<h1>Unowned games that {{query}}'s friends play</h1>
-
-<ul>
-    {{#each results}}
-    <li>{{this.name}}: {{this.appid}}</li>
-    {{/each}}
-</ul>
+<div id="output">
+    <h1>Unowned games that {{query}}'s friends play</h1>
+    <div class="games-container">
+        {{#each results}}
+        <div class="game-card">
+            <button class="info-button" data-game-id="{{this.title}}">Game Info</button>
+            <img src="{{this.thumb}}" alt="{{this.title}} Thumbnail">
+            <h2>{{this.title}}</h2>
+            <p>Retail Price: ${{this.retailPrice}}</p>
+            <div class="deals-container">
+                {{#each this.deals}}
+                <div class="deal-card {{#unless @first}}hidden{{/unless}}">
+                    <img src="https://www.cheapshark.com{{this.storeLogo}}" alt="{{this.storeName}} Logo">
+                    <p>Store: {{this.storeName}}</p>
+                    <p>Current Price: ${{this.currentPrice}} USD</p>
+                </div>
+                {{/each}}
+                <button class="expand-button">Show More</button>
+            </div>
+        </div>
+        {{/each}}
+    </div>
+</div>

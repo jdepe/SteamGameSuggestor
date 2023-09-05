@@ -1,0 +1,23 @@
+<div class="container">
+    <h1>{{results.name}}</h1>
+    <div class="game-overview">
+        <img src="{{results.image}}" alt="{{results.name}} Image" class="game-image">
+        <div class="about-section">
+            <p class="deck">{{{results.description}}}</p>          
+        </div>
+    </div>
+    <h2>Release Date</h2>
+    <p>{{results.original_release_date}}</p>
+    <h2>Platforms</h2>
+    <ul class="platform-list">
+        {{#each results.platforms}}
+        <li>{{this}}</li>
+        {{/each}}
+    </ul>
+
+    <div class="video-container">
+        {{#each youtube}}
+        <iframe src="https://www.youtube.com/embed/{{this}}" frameborder="0" allowfullscreen></iframe>
+        {{/each}}
+    </div>
+</div>
