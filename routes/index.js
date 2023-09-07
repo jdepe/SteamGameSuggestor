@@ -1,9 +1,16 @@
 var express = require('express');
 var router = express.Router();
+const {incrementCounter} = require('../counter');
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Docker Mashup' });
+router.get('/', async (req, res, next) => {
+  try {
+    const counter = await incrementCounter();
+    res.render('index', { title: 'Game Suggestions',  counter: counter});
+  } catch (err) {
+    console.error(error);
+    res.status(500).send('Internal Error');
+  }
 });
 
 router.get('/search', (req, res) => {
@@ -15,7 +22,6 @@ router.get('/search', (req, res) => {
 router.get("/suggested-games", async function (req, res) {
   const STEAM_KEY = process.env.STEAM_API_KEY;
   const steam_id = req.query.query;
-  console.log(steam_id);
   const steam_url = "http://api.steampowered.com/"
 
   // FIRST CALL TO GET OWNED GAMES LIST
@@ -24,9 +30,9 @@ router.get("/suggested-games", async function (req, res) {
   let gamesList = ownedGameData.response.games;
   gamesList = gamesList.map(game => ({
     name: game.name,
-    appid: game.appid,
+    appid: game.appid, 
   }))
-
+ 
   // // SECOND CALL TO GET FRIENDS LIST
   const secondRes = await fetch(`${steam_url}ISteamUser/GetFriendList/v0001/?key=${STEAM_KEY}&steamid=${steam_id}&relationship=friend`);
   const friendData = await secondRes.json();
@@ -39,7 +45,7 @@ router.get("/suggested-games", async function (req, res) {
     return data;
   }
 
-  let recentGames = [];
+  let recentGames = []; 
 
   for (const friend of firstFiveFriends) {
     const result = await fetchRecentlyPlayedGames(friend.steamid);
@@ -129,7 +135,7 @@ router.get("/suggested-games", async function (req, res) {
   }
 
 
-  res.render('steam-search', {title: "Suggested Games", query: 'me', results: finalList });
+  res.render('steam-search', {title: "Suggested Games", query: steam_id, results: finalList });
 });
 
 router.get("/:gameTitle", async function (req, res) {
