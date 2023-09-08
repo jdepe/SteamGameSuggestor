@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 const {incrementCounter} = require('../counter');
+const { fetchOwnedGames, fetchFriendList, fetchRecentlyPlayedGames } = require('../utilities/steamAPI');
 
 /* GET home page. */
 router.get('/', async (req, res, next) => {
@@ -20,9 +21,8 @@ router.get('/search', (req, res) => {
 
 // Steam
 router.get("/suggested-games", async function (req, res) {
-  const STEAM_KEY = process.env.STEAM_API_KEY;
   const steam_id = req.query.query;
-  const steam_url = "http://api.steampowered.com/"
+
 
   // FIRST CALL TO GET OWNED GAMES LIST
   const firstRes = await fetch(`${steam_url}IPlayerService/GetOwnedGames/v0001/?key=${STEAM_KEY}&steamid=${steam_id}&include_appinfo=true`)
