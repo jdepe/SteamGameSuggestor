@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 const {incrementCounter} = require('../counter');
 const { fetchOwnedGames, fetchFriendList, fetchRecentlyPlayedGames } = require('../utilities/steamAPI');
+const { fetchCheapShark, fetchCheapSharkById, fetchCheapSharkStores } = require('../utilities/cheapsharkAPI');
 
 /* GET home page. */
 router.get('/', async (req, res, next) => {
@@ -21,121 +22,98 @@ router.get('/search', (req, res) => {
 
 // Steam
 router.get("/suggested-games", async function (req, res) {
-  const steam_id = req.query.query;
-
-
-  // FIRST CALL TO GET OWNED GAMES LIST
-  const firstRes = await fetch(`${steam_url}IPlayerService/GetOwnedGames/v0001/?key=${STEAM_KEY}&steamid=${steam_id}&include_appinfo=true`)
-  const ownedGameData = await firstRes.json();
-  let gamesList = ownedGameData.response.games;
-  gamesList = gamesList.map(game => ({
-    name: game.name,
-    appid: game.appid, 
-  }))
- 
-  // // SECOND CALL TO GET FRIENDS LIST
-  const secondRes = await fetch(`${steam_url}ISteamUser/GetFriendList/v0001/?key=${STEAM_KEY}&steamid=${steam_id}&relationship=friend`);
-  const friendData = await secondRes.json();
-  const firstFiveFriends = friendData.friendslist.friends.slice(0,5);
   
-  // THIRD CALL TO GET EACH FRIENDS RECENTLY PLAYED GAMES
-  async function fetchRecentlyPlayedGames(steamid) {
-    const response = await fetch(`${steam_url}IPlayerService/GetRecentlyPlayedGames/v0001/?key=${STEAM_KEY}&steamid=${steamid}&format=json`);
-    const data = await response.json();
-    return data;
-  }
+  try {
+    const steam_id = req.query.query;
 
-  let recentGames = []; 
+    // Fetch owned games
+    let gamesList = await fetchOwnedGames(steam_id);
 
-  for (const friend of firstFiveFriends) {
-    const result = await fetchRecentlyPlayedGames(friend.steamid);
-    recentGames.push(result);
-  }
+    // Fetch friend list
+    const firstFiveFriends = await fetchFriendList(steam_id);
 
-  const flattenedGames = recentGames.map(item => item.response.games || []).flat();
+    // Fetch recently played games of friends
+    let recentGames = []; 
 
-  const uniqueGamesMap = {};
-  const uniqueGames = [];
-
-  flattenedGames.forEach(game => {
-    if (!uniqueGamesMap[game.appid]) {
-      uniqueGamesMap[game.appid] = true;
-      uniqueGames.push(game)
-    }    
-  });
-
-  // Compare friends recent games to your owned games
-  const gamesNotOwned = uniqueGames.filter(friendGame => 
-    !gamesList.some(myGame => myGame.appid === friendGame.appid));
-
-
-  // Find Game IDS on CheapShark
-  async function fetchCheapShark(appid) {
-    const response = await fetch(`https://www.cheapshark.com/api/1.0/games?steamAppID=${appid}`);
-    const data = await response.json();
-    return data;
-  }
-
-  let cheapSharkData = [];
-
-  for (const game of gamesNotOwned) {
-    const result = await fetchCheapShark(game.appid);
-    cheapSharkData.push(result);
-  }
-
-  cheapSharkData = cheapSharkData.flat();
-
-  async function fetchCSAgain(csid) {
-    const response = await fetch(`https://www.cheapshark.com/api/1.0/games?ids=${csid}`);
-    const data = await response.json();
-    return data;
-  }
-
-  let csagain = [];
-
-  for (const game of cheapSharkData) {
-    csagain.push(game.gameID);
-  }
-
-  csagain = csagain.join(',');
-  csagain = await fetchCSAgain(csagain);
-
-  const cheapSharkStores = await fetch(`https://cheapshark.com/api/1.0/stores`)
-  const finalCheapSharkStores = await cheapSharkStores.json();
-
-  const storeLookup = {};
-  finalCheapSharkStores.forEach((store) => {
-    storeLookup[store.storeID] = {
-      name: store.storeName,
-      logo: store.images.banner
-    };
-  });
-
-  const finalList = [];
-
-  for (const gameId in csagain) {
-    if (csagain.hasOwnProperty(gameId)) {
-      const currentGame = csagain[gameId];
-
-      const newObj = {
-        title: currentGame.info.title,
-        thumb: currentGame.info.thumb,
-        retailPrice: currentGame.deals.length > 0 ? currentGame.deals[0].retailPrice : 'N/A',
-        deals: currentGame.deals.map((deal) => {
-          return {
-            currentPrice: deal.price,
-            storeName: storeLookup[deal.storeID].name,
-            storeLogo: storeLookup[deal.storeID].logo,
-          };
-        })
-      };
-
-      finalList.push(newObj);
+    for (const friend of firstFiveFriends) {
+      const result = await fetchRecentlyPlayedGames(friend.steamid);
+      recentGames.push(result);
     }
+    
+    const flattenedGames = recentGames.flat();
+
+    const uniqueGamesMap = {};
+    const uniqueGames = [];
+  
+    flattenedGames.forEach(game => {
+      if (!uniqueGamesMap[game.appid]) {
+        uniqueGamesMap[game.appid] = true;
+        uniqueGames.push(game)
+      }    
+    });
+  
+    // Compare friends recent games to your owned games
+    const gamesNotOwned = uniqueGames.filter(friendGame => 
+      !gamesList.some(myGame => myGame.appid === friendGame.appid));
+  
+    let cheapSharkData = [];
+  
+    for (const game of gamesNotOwned) {
+      const result = await fetchCheapShark(game.appid);
+      cheapSharkData.push(result); 
+    }
+  
+    cheapSharkData = cheapSharkData.flat();
+  
+    let cheapSharkById = [];
+  
+    for (const game of cheapSharkData) {
+      cheapSharkById.push(game.gameID);
+    }
+  
+    cheapSharkById = cheapSharkById.join(',');
+    cheapSharkById = await fetchCheapSharkById(cheapSharkById);
+  
+    const cheapSharkStores = await fetchCheapSharkStores();
+  
+    const storeLookup = {};
+    cheapSharkStores.forEach((store) => {
+      storeLookup[store.storeID] = {
+        name: store.storeName,
+        logo: store.images.banner
+      };
+    });
+  
+    const finalList = [];
+  
+    for (const gameId in cheapSharkById) {
+      if (cheapSharkById.hasOwnProperty(gameId)) {
+        const currentGame = cheapSharkById[gameId];
+  
+        const newObj = {
+          title: currentGame.info.title,
+          thumb: currentGame.info.thumb,
+          retailPrice: currentGame.deals.length > 0 ? currentGame.deals[0].retailPrice : 'N/A',
+          deals: currentGame.deals.map((deal) => {
+            return {
+              currentPrice: deal.price,
+              storeName: storeLookup[deal.storeID].name,
+              storeLogo: storeLookup[deal.storeID].logo,
+            };
+          })
+        };
+  
+        finalList.push(newObj);
+      }
+    }
+  
+  
+    res.render('steam-search', {title: "Suggested Games", query: steam_id, results: finalList });
+
+  }  catch (error) {
+    console.error(error);
+    res.status(500).send('Internal Server Error');
   }
-
-
-  res.render('steam-search', {title: "Suggested Games", query: steam_id, results: finalList });
 });
 
 router.get("/:gameTitle", async function (req, res) {

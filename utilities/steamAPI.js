@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 const STEAM_API_URL = "http://api.steampowered.com/";
 const STEAM_API_KEY = process.env.STEAM_API_KEY;
 
@@ -35,7 +33,7 @@ const fetchFriendList = async (steam_id) => {
 
 const fetchRecentlyPlayedGames = async (steam_id) => {
     try {
-        const response = await fetch(`${STEAM_API_URL}IPlayerService/GetRecentlyPlayedGames/v0001/?key=${STEAM_KEY}&steamid=${steam_id}&format=json`);
+        const response = await fetch(`${STEAM_API_URL}IPlayerService/GetRecentlyPlayedGames/v0001/?key=${STEAM_API_KEY}&steamid=${steam_id}&format=json`);
         
         if (!response.ok) throw new Error('Failed to fetch recently played games');
 
@@ -48,8 +46,4 @@ const fetchRecentlyPlayedGames = async (steam_id) => {
     }
 };
 
-module.exports = {
-    fetchOwnedGames,
-    fetchFriendList,
-    fetchRecentlyPlayedGames,
-};
+module.exports = { fetchOwnedGames, fetchFriendList, fetchRecentlyPlayedGames, };
