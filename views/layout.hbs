@@ -2,9 +2,19 @@
 <html>
   <head>
     <title>{{title}}</title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <link rel='stylesheet' href="/stylesheets/dist/tailwind-output.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
   </head>
-  <body>
+  <header>
+    <nav class="bg-gray-800 p-4">
+        <div class="container mx-auto flex justify-center items-center">
+            <a href="/" class="text-white text-3xl font-medium ">Game Suggestor</a>
+        </div>
+    </nav>
+  </header>
+  <body class="bg-gray-900 ">
     {{{body}}}
     <script src="/javascripts/steampage.js"></script>
   </body>
