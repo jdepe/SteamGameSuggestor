@@ -1,18 +1,13 @@
+
 # Use the Node.js LTS image as a base
 FROM node:lts
-
 RUN npm install nodemon -g
-# Copy app source
-COPY . /src
 
-# Set working directory to /src
+# Copy application to src directory then set working directory to /src
+COPY . /src
 WORKDIR /src
 
-# Install app dependencies
+# Install dependencies, expose port 3000, then start the application
 RUN npm install
-
-# Expose port to outside world
 EXPOSE 3000
-
-# Start command as per the package.json file
 CMD ["npm", "start"]

@@ -137,7 +137,7 @@ router.get("/:gameTitle", async function (req, res) {
     const youtubeResponse = await fetch(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&maxResults=3&order=relevance&q=${youtubeSearch}&key=${YOUTUBE_API_KEY}`);
     const youtubeData = await youtubeResponse.json();
 
-    const youtubeUrls = [];
+    let youtubeUrls = [];
 
     if (youtubeData.error) {
       console.error('YouTube API error:', youtubeData.error.message);
